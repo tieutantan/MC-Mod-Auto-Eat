@@ -7,10 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.network.chat.Component;
@@ -22,17 +19,14 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @EventBusSubscriber(modid = AutoEat.MODID)
 public final class AutoEatEvents {
     private static final int MAX_FOOD_LEVEL = 20;
     private static final int START_EAT_LEVEL = MAX_FOOD_LEVEL / 2; // 50%
-    private static final int STOP_EAT_LEVEL = (int) Math.floor(MAX_FOOD_LEVEL * 0.85D); // 85%
     private static final String MESSAGES_RESOURCE = "/autoeat_messages.txt";
     private static final List<String> EAT_MESSAGES = loadEatMessages();
-    private static final Set<UUID> AUTO_EATING_PLAYERS = new HashSet<>();
 
     private AutoEatEvents() {
     }
@@ -45,24 +39,14 @@ public final class AutoEatEvents {
         }
 
         if (serverPlayer.isCreative() || serverPlayer.isSpectator()) {
-            AUTO_EATING_PLAYERS.remove(serverPlayer.getUUID());
             return;
         }
 
         FoodData foodData = serverPlayer.getFoodData();
         int foodLevel = foodData.getFoodLevel();
-        UUID playerId = serverPlayer.getUUID();
 
-        if (foodLevel <= START_EAT_LEVEL) {
-            AUTO_EATING_PLAYERS.add(playerId);
-        }
-
-        if (foodLevel > STOP_EAT_LEVEL || !foodData.needsFood()) {
-            AUTO_EATING_PLAYERS.remove(playerId);
-            return;
-        }
-
-        if (!AUTO_EATING_PLAYERS.contains(playerId)) {
+        // Only trigger auto-eat when hunger is strictly below 50%.
+        if (foodLevel >= START_EAT_LEVEL || !foodData.needsFood()) {
             return;
         }
 
@@ -77,20 +61,6 @@ public final class AutoEatEvents {
         if (consumed) {
             inventory.setChanged();
             serverPlayer.containerMenu.broadcastChanges();
-        } else {
-            // Stop tracking until new food appears to avoid unnecessary inventory scans.
-            AUTO_EATING_PLAYERS.remove(playerId);
-        }
-
-        if (foodData.getFoodLevel() > STOP_EAT_LEVEL || !foodData.needsFood()) {
-            AUTO_EATING_PLAYERS.remove(playerId);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            AUTO_EATING_PLAYERS.remove(serverPlayer.getUUID());
         }
     }
 
@@ -151,13 +121,6 @@ public final class AutoEatEvents {
         } catch (IOException exception) {
             AutoEat.LOGGER.warn("Failed reading {}. Falling back to default messages.", MESSAGES_RESOURCE, exception);
             return List.of("AutoEat active.");
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.Clone event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            AUTO_EATING_PLAYERS.remove(serverPlayer.getUUID());
         }
     }
 }
