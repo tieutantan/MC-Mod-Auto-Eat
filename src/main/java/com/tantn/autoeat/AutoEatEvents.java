@@ -50,8 +50,8 @@ public final class AutoEatEvents {
             return;
         }
 
-        // Check every 10 ticks to avoid running inventory scans every tick.
-        if (serverPlayer.tickCount % 10 != 0) {
+        // Check every 100 ticks to reduce inventory scans.
+        if (serverPlayer.tickCount % 100 != 0) {
             return;
         }
 
