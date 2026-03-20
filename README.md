@@ -7,7 +7,7 @@ AutoEat is an automatic eating mod for Minecraft 1.21.1 (NeoForge). It does not 
 
 - Auto-eats only when hunger is below 35% (< 7/20).
 - No separate stop-threshold logic; each check only decides based on current hunger.
-- Eats exactly 1 item every 80 ticks while hunger is below 35%.
+- Eats exactly 1 item every 80 ticks while hunger is below 65%.
 - Prioritizes inventory order from top to bottom (lower slot index first).
 - Correctly decreases consumed food item count.
 - After each eat action, sends 1 chat line with remaining count in the consumed stack + one random message from `src/main/resources/autoeat_messages.txt` (500 messages).
