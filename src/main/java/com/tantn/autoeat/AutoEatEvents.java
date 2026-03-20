@@ -24,7 +24,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 @EventBusSubscriber(modid = AutoEat.MODID)
 public final class AutoEatEvents {
     private static final int MAX_FOOD_LEVEL = 20;
-    private static final int START_EAT_LEVEL = MAX_FOOD_LEVEL / 2; // 50%
+    private static final int START_EAT_LEVEL = MAX_FOOD_LEVEL * 2 / 5; // 40%
     private static final String MESSAGES_RESOURCE = "/autoeat_messages.txt";
     private static final List<String> EAT_MESSAGES = loadEatMessages();
 
@@ -45,7 +45,7 @@ public final class AutoEatEvents {
         FoodData foodData = serverPlayer.getFoodData();
         int foodLevel = foodData.getFoodLevel();
 
-        // Only trigger auto-eat when hunger is strictly below 50%.
+        // Only trigger auto-eat when hunger is strictly below 40%.
         if (foodLevel >= START_EAT_LEVEL || !foodData.needsFood()) {
             return;
         }
