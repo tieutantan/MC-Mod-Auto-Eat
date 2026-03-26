@@ -24,7 +24,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 @EventBusSubscriber(modid = AutoEat.MODID)
 public final class AutoEatEvents {
     private static final int MAX_FOOD_LEVEL = 20;
-    private static final int START_EAT_LEVEL = MAX_FOOD_LEVEL * 65 / 100; // 65%
+    private static final int LOW_HEALTH_PERCENT = 85;
+    private static final int LOW_HUNGER_EAT_LEVEL = MAX_FOOD_LEVEL * 70 / 100; // 70%
     private static final int EAT_CHECK_INTERVAL_TICKS = 80;
     private static final String MESSAGES_RESOURCE = "/autoeat_messages.txt";
     private static final List<String> EAT_MESSAGES = loadEatMessages();
@@ -45,13 +46,13 @@ public final class AutoEatEvents {
 
         FoodData foodData = serverPlayer.getFoodData();
         int foodLevel = foodData.getFoodLevel();
+        boolean lowHealth = isHealthAtOrBelowPercent(serverPlayer, LOW_HEALTH_PERCENT);
 
-        // Only trigger auto-eat when hunger is strictly below 65%.
-        if (foodLevel >= START_EAT_LEVEL || !foodData.needsFood()) {
+        if (!shouldEat(foodData, foodLevel, lowHealth)) {
             return;
         }
 
-        // Check every 80 ticks to reduce inventory scans.
+        // Eat exactly one item every 80 ticks when the thresholds match.
         if (serverPlayer.tickCount % EAT_CHECK_INTERVAL_TICKS != 0) {
             return;
         }
@@ -63,6 +64,18 @@ public final class AutoEatEvents {
             inventory.setChanged();
             serverPlayer.containerMenu.broadcastChanges();
         }
+    }
+
+    private static boolean shouldEat(FoodData foodData, int foodLevel, boolean lowHealth) {
+        if (lowHealth) {
+            return foodData.needsFood();
+        }
+
+        return foodLevel < LOW_HUNGER_EAT_LEVEL;
+    }
+
+    private static boolean isHealthAtOrBelowPercent(Player player, int healthPercent) {
+        return player.getHealth() <= player.getMaxHealth() * healthPercent / 100.0F;
     }
 
     private static boolean consumeSingleItemFromTop(ServerPlayer player, Inventory inventory, FoodData foodData) {
@@ -87,7 +100,7 @@ public final class AutoEatEvents {
     }
 
     private static void sendEatChat(ServerPlayer player, int remainingInStack) {
-        player.sendSystemMessage(Component.literal("[AutoEat] Remaining in stack: " + remainingInStack + " | " + randomEatMessage()));
+        player.sendSystemMessage(Component.literal("[AutoEat] " + remainingInStack + " | " + randomEatMessage()));
     }
 
     private static String randomEatMessage() {
